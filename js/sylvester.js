@@ -821,6 +821,12 @@ Matrix.Zero = function(n, m) {
     return Matrix.create(els);
 };
 
+Matrix.TranslateToPosition = function(position, k) {
+    k = k || 1;
+    var elements = position.elements || position;
+    return Matrix.Translation($V([k * elements[0], k * elements[1], k * elements[2]])).ensure4x4();
+}
+
 
 
 function Line() {}

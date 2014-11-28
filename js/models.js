@@ -109,37 +109,6 @@ var Loader = {
     colorsBuffer: null,
     facesBuffer: null,
 
-    load: function(gl, file) {
-        var modelJSON;
-        $.ajax({
-            async: false,
-            url: "models/" + file,
-            dataType: "text",
-            success: function (result) {
-                modelJSON = result;
-            }
-        });
-        model = JSON.parse(modelJSON);
-
-        if (model.metadata.vertices == 0 || model.metadata.normals == 0 || model.metadata.faces == 0) {
-            alert("Model must have vertices, normals and faces.");
-            return;
-        }
-
-        model.vertexDim = model.vertices.length / model.metadata.vertices;
-        model.normalDim = model.normals.length / model.metadata.normals;
-        model.faceDim = model.faces.length / model.metadata.faces;
-
-        console.log(model.vertexDim);
-        console.log(model.normalDim);
-        console.log(model.faceDim);
-        if (model.vertexDim != 3 || model.normalDim != 3) {
-            alert("Model is corrupt: each vertex, normal and face should be presented by 3 values");
-            return undefined;
-        }
-
-        return model;
-    },
 
     initBuffers: function(gl) {
         if (!this.useColors) {
@@ -184,8 +153,41 @@ var Loader = {
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(this.model.faces), gl.STATIC_DRAW);
     },
 
+    load: function(gl, file) {
+        var modelJSON;
+        $.ajax({
+            async: false,
+            url: "models/" + file,
+            dataType: "text",
+            success: function (result) {
+                modelJSON = result;
+            }
+        });
+        this.model = JSON.parse(modelJSON);
+        var model = this.model;
+
+        if (model.metadata.vertices == 0 || model.metadata.normals == 0 || model.metadata.faces == 0) {
+            alert("Model must have vertices, normals and faces.");
+            return;
+        }
+
+        model.vertexDim = model.vertices.length / model.metadata.vertices;
+        model.normalDim = model.normals.length / model.metadata.normals;
+        model.faceDim = model.faces.length / model.metadata.faces;
+
+        console.log(model.vertexDim);
+        console.log(model.normalDim);
+        console.log(model.faceDim);
+        if (model.vertexDim != 3 || model.normalDim != 3) {
+            alert("Model is corrupt: each vertex, normal and face should be presented by 3 values");
+            return undefined;
+        }
+
+        return model;
+    },
+
     draw: function(gl) {
-        if (this.verticesBuffer == null) {
+        if (this.verticesBuffer === undefined) {
             this.initBuffers(gl);
         }
 

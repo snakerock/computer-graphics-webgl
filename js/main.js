@@ -3,8 +3,9 @@ var gl;
 var scene;
 var isMouseDown = false;
 var mousePos = [0, 0];
+var depthTextureExt;
 
-function start() {
+    function start() {
     canvas = $("#glcanvas")[0];
     gl = initWebGL(canvas);
 
@@ -13,18 +14,27 @@ function start() {
         gl.enable(gl.DEPTH_TEST);                               // Enable depth testing
         gl.depthFunc(gl.LEQUAL);                                // Near things obscure far things
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);    // Clear the color as well as the depth buffer.
+        depthTextureExt = gl.getExtension("WEBGL_depth_texture");
+        gl.getExtension('OES_texture_float');
     } else {
         alert("Could not initialize WebGL. Update your browser or check settings.");
         return;
     }
 
     scene = new Scene(canvas, gl);
-    for (var x = -400.0; x <= 401.0; x += 200.0) {
+    /*for (var x = -400.0; x <= 401.0; x += 200.0) {
         for (var z = -300.0; z >= -500.0; z -= 100.0) {
-            scene.objects.push(new Object3D(gl, "ozzy-vn.json", new CookTorranceShader(gl), [x, -200, z]));
+            scene.objects.push (new Object3D(gl,
+                                "ozzy-vn.json",
+                                new CookTorranceShader(gl),
+                                new DepthmapShader(gl),
+                                [x, -200, z]));
         }
-    }
-    //scene.objects.push(new Object3D(gl, "ozzy-vn.json", new NoLightShader(gl), [200.0, -100, -300.0]));
+    }*/
+    var nlshader = new NoLightShader(gl);
+    var dmshader = new DepthmapShader(gl);
+    scene.objects.push(new Object3D(gl, "ozzy.json", nlshader, dmshader, [0.0, -150.0, -300.0]));
+    scene.objects.push(new Object3D(gl, "ozzy.json", nlshader, dmshader, [0.0, -200, -500.0]));
     //scene.objects.push(new Object3D(gl, "ozzy-vn.json", new LambertShader(gl), [-200.0, -100, -300.0]));
 
     $(window).resize(resizeCanvas);
@@ -37,7 +47,7 @@ function start() {
 
     $("#glcanvas").mousemove(function (event) {
         if (isMouseDown) {
-            scene.mvRotateXY((event.pageX - mousePos[0]) / 100, (event.pageY - mousePos[1]) / 100);
+            scene.vRotateXY((event.pageX - mousePos[0]) / 100, (event.pageY - mousePos[1]) / 100);
             mousePos = [event.pageX, event.pageY];
             drawScene();
         }
@@ -45,6 +55,12 @@ function start() {
 
     $("#glcanvas").mouseup(function (event) {
         isMouseDown = false;
+    });
+
+    $("#glcanvas").bind('mousewheel', function(event) {
+        var z = event.originalEvent.wheelDelta > 0 ? 10 : -10;
+        scene.vTranslate(z);
+        drawScene();
     });
 }
 
