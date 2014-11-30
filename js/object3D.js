@@ -1,10 +1,11 @@
-function Object3D(gl, model, shader, depthmapShader, position) {
+function Object3D(gl, model, shader, depthmapShader, position, zoom) {
     if (typeof(model) == 'string') {
         this.model = Loader.load(gl, model);
     } else {
         this.model = model;
     }
 
+    this.zoom = zoom ? [zoom, zoom, zoom, 1] : [1, 1, 1, 1];
     this.shader = shader;
     this.depthmapShader = depthmapShader;
     this.position = position || [0.0, 0.0, 0.0];
@@ -54,24 +55,23 @@ function Object3D(gl, model, shader, depthmapShader, position) {
     this.generateDepthTexture = function(gl, modelAttribs) {
         this.depthmapShader.switch(gl);
         var mMatrix = modelAttribs.mMatrix || Matrix.I(4);
-        var lightPosition = modelAttribs.lightPosition;
+        var vMatrix = modelAttribs.vMatrix || depthmapShader.vMatrix;
+        mMatrix = mMatrix.x(Matrix.Diagonal(this.zoom));
+
         modelAttribs.mMatrix = Matrix.multiplyMatrices(mMatrix,
-                                                       Matrix.TranslateToPosition(lightPosition, -1),
                                                        Matrix.TranslateToPosition(this.position));
         this.depthmapShader.draw(gl, this, modelAttribs);
     };
 
     this.draw = function(gl, modelAttribs) {
         var mMatrix = modelAttribs.mMatrix || Matrix.I(4);
-        var lightPosition = modelAttribs.lightPosition;
-        if (shader.lightPosition !== undefined && modelAttribs.lightPosition.elements.equals(shader.lightPosition.elements)) {
-            modelAttribs.lightPosition = undefined;
-        }
+        mMatrix = mMatrix.x(Matrix.Diagonal(this.zoom));
+        var vLight = modelAttribs.vLight;
 
         if (modelAttribs.depthBiasPMatrix !== undefined) {
             modelAttribs.depthBiasMVP = Matrix.multiplyMatrices(modelAttribs.depthBiasPMatrix,
+                vLight,
                 mMatrix,
-                Matrix.TranslateToPosition(lightPosition, -1),
                 Matrix.TranslateToPosition(this.position));
         }
 
