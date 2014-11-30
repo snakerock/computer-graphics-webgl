@@ -286,6 +286,16 @@ Vector.prototype = {
         return V;
     },
 
+    ensure4: function() {
+        var V = this.dup();
+        switch (V.elements.length) {
+            case 4: break;
+            case 3: V.elements.push(1); break;
+            default: return null;
+        }
+        return V;
+    },
+
     // Returns a string representation of the vector
     inspect: function() {
         return '[' + this.elements.join(', ') + ']';
@@ -698,6 +708,10 @@ Matrix.prototype = {
         return matrix_rows.join('\n');
     },
 
+    flatten: function() {
+        return Vector.create(this.elements).elements;
+    },
+
     // Set the matrix's elements from an array. If the argument passed
     // is a vector, the resulting matrix will be a single column.
     setElements: function(els) {
@@ -825,9 +839,15 @@ Matrix.TranslateToPosition = function(position, k) {
     k = k || 1;
     var elements = position.elements || position;
     return Matrix.Translation($V([k * elements[0], k * elements[1], k * elements[2]])).ensure4x4();
-}
+};
 
-
+Matrix.multiplyMatrices = function() {
+    var result = arguments[0].dup();
+    for (var i = 1; i < arguments.length; ++i) {
+        result = result.x(arguments[i]);
+    }
+    return result;
+};
 
 function Line() {}
 Line.prototype = {

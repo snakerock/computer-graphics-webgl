@@ -1,10 +1,9 @@
 function Scene(canvas, gl) {
 
-    this.lightPosition = Vector.create([0.0, 0.0, 0.0]);
+    this.lightPosition = Vector.create([0.0, 0.0, 600.0]);
     this.eyePosition = Vector.create([0.0, 0.0, 0.0]);
     this.objects = [];
 
-    this.mMatrix = Matrix.I(4);
     this.vMatrix = Matrix.I(4);
     this.pMatrix = makePerspective(45, canvas.width / canvas.height, 0.1, 1000);
     this.depthPMatrix = makePerspective(45, 1, 10, 1000);
@@ -38,29 +37,25 @@ function Scene(canvas, gl) {
     }
 
     this.biasMatrix = Matrix.create([
-        [0.5, 0.0, 0.0, 0.0],
-        [0.0, 0.5, 0.0, 0.0],
-        [0.0, 0.0, 0.5, 0.0],
-        [0.5, 0.5, 0.5, 1.0]
-    ]);
-    this.biasMatrix = Matrix.create([
         [0.5, 0.0, 0.0, 0.5],
         [0.0, 0.5, 0.0, 0.5],
         [0.0, 0.0, 0.5, 0.5],
         [0.0, 0.0, 0.0, 1.0]
     ]);
 
-    this.vRotateXY = function(angleX, angleY) {
-        this.vMatrix = this.vMatrix.x(Matrix.RotationX(angleY).ensure4x4());
-        this.vMatrix = this.vMatrix.x(Matrix.RotationY(angleX).ensure4x4());
-    };
+    this.angleX = 0;
+    this.angleY = 0;
+    this.oldZoom = 0;
+    this.zoom = 0;
 
-    this.mTranslate = function(v) {
-        this.mMatrix = this.mMatrix.x(Matrix.Translation($V([v[0], v[1], v[2]])).ensure4x4());
+    this.vRotateXY = function(dx, dy) {
+        this.angleY = dx;
+        this.angleX = dy;
     };
 
     this.vTranslate = function(z) {
-        this.vMatrix = this.vMatrix.x(Matrix.Translation($V([0, 0, z])).ensure4x4());
+        this.oldZoom = this.zoom;
+        this.zoom += z;
     };
 
     this.setShaderModelAttribs = function(gl, shader, basicModelAttribs) {
@@ -106,15 +101,15 @@ function Scene(canvas, gl) {
         gl.colorMask(false, false, false, false);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        var scene = this;
-
         var basicModelAttribs = { scene: this,
-                                  mMatrix: { matrix: Matrix.I(4) },//Matrix.TranslateToPosition(this.lightPosition) },
-                                  vMatrix: { matrix: Matrix.I(4) },
-                                  pMatrix: { matrix: this.depthPMatrix }
+                                  vMatrix: Matrix.I(4),  // here is to point light
+                                  pMatrix: this.depthPMatrix,
+                                  lightPosition: this.lightPosition
                                 };
         this.drawSortingShaders(gl, function(gl, scene, object, shader) {
-                var modelAttribs = { mMatrix: { matrix: Matrix.I(4) } };
+                var modelAttribs = {
+                                    lightPosition: scene.lightPosition
+                                   };
                 object.generateDepthTexture(gl, modelAttribs);
             },
             basicModelAttribs,
@@ -125,6 +120,14 @@ function Scene(canvas, gl) {
     this.draw = function(canvas, gl) {
         if (this.objects.length == 0) return;
 
+        this.vMatrix = Matrix.multiplyMatrices(Matrix.Translation($V([0, 0, this.zoom])).ensure4x4(),
+                Matrix.RotationX(this.angleX).ensure4x4(),
+                Matrix.RotationY(this.angleY).ensure4x4(),
+                Matrix.Translation($V([0, 0, -this.oldZoom])),
+                this.vMatrix
+            );
+        this.oldZoom = this.zoom;
+        this.angleX = this.angleY = 0;
         this.generateDepthTexture(gl);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -133,19 +136,21 @@ function Scene(canvas, gl) {
         gl.colorMask(true, true, true, true);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        var depthBiasPMatrix = this.biasMatrix.x(this.depthPMatrix);
+        var depthBiasPMatrix = Matrix.multiplyMatrices(this.biasMatrix, this.depthPMatrix);
+        var vLightPosition = Matrix.multiplyMatrices(this.lightPosition.ensure4());
+        var vEyePosition = Matrix.multiplyMatrices(this.vMatrix, this.eyePosition.ensure4());
         var basicModelAttribs = { scene: this,
-                                  mMatrix: { matrix: this.mMatrix.dup() },
-                                  vMatrix: { matrix: this.vMatrix.dup() },
-                                  pMatrix: { matrix: this.pMatrix.dup() },
+                                  vMatrix: this.vMatrix,
+                                  pMatrix: this.pMatrix,
+                                  lightPosition: vLightPosition,
+                                  eyePosition: vEyePosition,
                                   depthTexture: this.depthTexture,
-                                  depthBiasPMatrix: { matrix: depthBiasPMatrix },
-                                  lightPosition: { matrix: this.lightPosition }
+                                  depthBiasPMatrix: depthBiasPMatrix
                                 };
         this.drawSortingShaders(gl, function(gl, scene, object, shader) {
-                var modelAttribs = { mMatrix: { matrix: scene.mMatrix.dup() },
-                                     depthBiasPMatrix: { matrix: depthBiasPMatrix },
-                                     lightPosition: { matrix: scene.lightPosition }
+                var modelAttribs = {
+                                    depthBiasPMatrix: depthBiasPMatrix,
+                                    lightPosition: vLightPosition
                                    };
                 object.draw(gl, modelAttribs);
             },

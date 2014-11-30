@@ -5,44 +5,22 @@ function ShaderBase(gl, shaderProgram) {
         this.shaderProgram = shaderProgram;
     }
 
+    this.mMatrix = Matrix.I(4);
+    this.vMatrix = Matrix.I(4);
+
     this.setModelAttribs = function(gl, modelAttribs) {
         if (modelAttribs.scene !== undefined) {
             this.scene = modelAttribs.scene;
         }
 
         if (modelAttribs.mMatrix !== undefined) {
-            if (modelAttribs.mMatrix.attrib === undefined) {
-                this.mMatrix = modelAttribs.mMatrix.matrix;
-            }
-            if (modelAttribs.mMatrix.attrib === "scene") {
-                this.mMatrix = modelAttribs.scene.mMatrix;
-            }
-            if (modelAttribs.mMatrix.attrib === "dup") {
-                this.mMatrix = modelAttribs.mMatrix.matrix.dup();
-            }
+            this.mMatrix = modelAttribs.mMatrix;
         }
         if (modelAttribs.vMatrix !== undefined) {
-            if (modelAttribs.vMatrix.attrib === undefined) {
-                this.vMatrix = modelAttribs.vMatrix.matrix;
-            }
-            if (modelAttribs.vMatrix.attrib === "scene") {
-                this.vMatrix = modelAttribs.scene.vMatrix;
-
-            }
-            if (modelAttribs.vMatrix.attrib === "dup") {
-                this.vMatrix = modelAttribs.vMatrix.matrix.dup();
-            }
+            this.vMatrix = modelAttribs.vMatrix;
         }
         if (modelAttribs.pMatrix !== undefined) {
-            if (modelAttribs.pMatrix.attrib === undefined) {
-                this.pMatrix = modelAttribs.pMatrix.matrix;
-            }
-            if (modelAttribs.pMatrix.attrib === "scene") {
-                this.pMatrix = modelAttribs.scene.pMatrix;
-            }
-            if (modelAttribs.pMatrix.attrib === "dup") {
-                this.pMatrix = modelAttribs.pMatrix.matrix.dup();
-            }
+            this.pMatrix = modelAttribs.pMatrix;
         }
     };
 
@@ -99,24 +77,11 @@ function ColorShader(gl, shaderProgram) {
         baseSetModelAttribs.call(this, gl, modelAttribs);
 
         if (modelAttribs.depthBiasMVP !== undefined) {
-            if (modelAttribs.depthBiasMVP.attrib === undefined) {
-                this.depthBiasMVP = modelAttribs.depthBiasMVP.matrix;
-            }
-            if (modelAttribs.depthBiasMVP.attrib === "scene") {
-                this.depthBiasMVP = modelAttribs.scene.depthBiasMVP;
-            }
-            if (modelAttribs.depthBiasMVP.attrib === "dup") {
-                this.depthBiasMVP = modelAttribs.depthBiasMVP.matrix.dup();
-            }
+            this.depthBiasMVP = modelAttribs.depthBiasMVP;
         }
 
         if (modelAttribs.depthTexture !== undefined) {
-            if (modelAttribs.depthTexture.attrib === undefined) {
-                this.depthTexture = modelAttribs.depthTexture;
-            }
-            if (modelAttribs.depthTexture.attrib === "scene") {
-                this.depthTexture = modelAttribs.scene.depthTexture;
-            }
+            this.depthTexture = modelAttribs.depthTexture;
         }
     };
 
@@ -178,36 +143,13 @@ function LambertShader(gl, shaderProgram) {
     shader.setModelAttribs = function(gl, modelAttribs) {
         baseSetModelAttribs.call(this, gl, modelAttribs);
 
-        if (modelAttribs.depthBiasMVP !== undefined) {
-            if (modelAttribs.depthBiasMVP.attrib === undefined) {
-                this.depthBiasMVP = modelAttribs.depthBiasMVP.matrix;
-            }
-            if (modelAttribs.depthBiasMVP.attrib === "scene") {
-                this.depthBiasMVP = modelAttribs.scene.depthBiasMVP;
-            }
-            if (modelAttribs.depthBiasMVP.attrib === "dup") {
-                this.depthBiasMVP = modelAttribs.depthBiasMVP.matrix.dup();
-            }
-        }
-
-        if (modelAttribs.normalMatrix !== undefined ||
-            (modelAttribs.mMatrix !== undefined &&
-             modelAttribs.vMatrix !== undefined)
-           ) {
-            this.normalMatrix = (this.vMatrix.x(this.mMatrix)).inverse().transpose();
-            modelAttribs.normalMatrix = this.normalMatrix;
+        if (modelAttribs.mMatrix !== undefined || modelAttribs.vMatrix !== undefined) {
+            this.normalMatrix = Matrix.multiplyMatrices(this.vMatrix, this.mMatrix).inverse().transpose();
+            modelAttribs.normalMatrix = { matrix: this.normalMatrix };
         }
 
         if (modelAttribs.lightPosition !== undefined) {
-            if (modelAttribs.lightPosition.attrib === undefined) {
-                this.lightPosition = modelAttribs.lightPosition;
-            }
-            if (modelAttribs.lightPosition.attrib === "scene") {
-                this.lightPosition = modelAttribs.scene.lightPosition;
-            }
-            if (modelAttribs.lightPosition.attrib === "dup") {
-                this.lightPosition = modelAttribs.lightPosition.matrix.dup();
-            }
+            this.lightPosition = modelAttribs.lightPosition.ensure4();
         }
     };
 
@@ -255,15 +197,7 @@ function CookTorranceShader(gl, shaderProgram) {
         baseSetModelAttribs.call(this, gl, modelAttribs);
 
         if (modelAttribs.eyePosition !== undefined) {
-            if (modelAttribs.eyePosition.attrib === undefined) {
-                this.eyePosition = modelAttribs.eyePosition;
-            }
-            if (modelAttribs.eyePosition.attrib === "scene") {
-                this.eyePosition = modelAttribs.scene.eyePosition;
-            }
-            if (modelAttribs.eyePosition.attrib === "dup") {
-                this.eyePosition = modelAttribs.eyePosition.matrix.dup();
-            }
+            this.eyePosition = modelAttribs.eyePosition.ensure4();
         }
     };
 
@@ -278,7 +212,7 @@ function CookTorranceShader(gl, shaderProgram) {
         baseSetUniforms.call(this, gl, modelAttribs);
 
         if (modelAttribs.eyePosition !== undefined) {
-            gl.uniform4fv(this.eyeUniform, new Float32Array(scene.eyePosition.flatten()));
+            gl.uniform4fv(this.eyeUniform, new Float32Array(this.eyePosition.flatten()));
         }
     };
 

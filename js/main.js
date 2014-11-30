@@ -5,7 +5,7 @@ var isMouseDown = false;
 var mousePos = [0, 0];
 var depthTextureExt;
 
-    function start() {
+function start() {
     canvas = $("#glcanvas")[0];
     gl = initWebGL(canvas);
 
@@ -31,10 +31,12 @@ var depthTextureExt;
                                 [x, -200, z]));
         }
     }*/
-    var nlshader = new NoLightShader(gl);
-    var dmshader = new DepthmapShader(gl);
-    scene.objects.push(new Object3D(gl, "ozzy.json", nlshader, dmshader, [0.0, -150.0, -300.0]));
-    scene.objects.push(new Object3D(gl, "ozzy.json", nlshader, dmshader, [0.0, -200, -500.0]));
+    var noLightShader = new NoLightShader(gl);
+    var lambertShader = new LambertShader(gl);
+    var cookTorranceShader = new CookTorranceShader(gl);
+    var depthMapshader = new DepthmapShader(gl);
+    scene.objects.push(new Object3D(gl, "ozzy.json", cookTorranceShader, depthMapshader, [0.0, -150.0, -50.0]));
+    scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, -200, 50.0]));
     //scene.objects.push(new Object3D(gl, "ozzy-vn.json", new LambertShader(gl), [-200.0, -100, -300.0]));
 
     $(window).resize(resizeCanvas);
@@ -98,4 +100,28 @@ function lambertLighting() {
 }
 
 function cookTorrance() {
+}
+
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+
+    // compare lengths - can save a lot of time
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l=this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;
+        }
+        else if (this[i] != array[i]) {
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;
+        }
+    }
+    return true;
 }

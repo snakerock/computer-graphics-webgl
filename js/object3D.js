@@ -53,24 +53,29 @@ function Object3D(gl, model, shader, depthmapShader, position) {
 
     this.generateDepthTexture = function(gl, modelAttribs) {
         this.depthmapShader.switch(gl);
-        if (modelAttribs.mMatrix !== undefined) {
-            if (modelAttribs.mMatrix.attrib !== "scene") {
-                modelAttribs.mMatrix.matrix = this.mMatrixAtPosition(modelAttribs.mMatrix.matrix);
-            }
-        }
+        var mMatrix = modelAttribs.mMatrix || Matrix.I(4);
+        var lightPosition = modelAttribs.lightPosition;
+        modelAttribs.mMatrix = Matrix.multiplyMatrices(mMatrix,
+                                                       Matrix.TranslateToPosition(lightPosition, -1),
+                                                       Matrix.TranslateToPosition(this.position));
         this.depthmapShader.draw(gl, this, modelAttribs);
     };
 
     this.draw = function(gl, modelAttribs) {
-        if (modelAttribs.mMatrix !== undefined) {
-            if (modelAttribs.mMatrix.attrib !== "scene") {
-                modelAttribs.mMatrix.matrix = this.mMatrixAtPosition(modelAttribs.mMatrix.matrix);
-            }
+        var mMatrix = modelAttribs.mMatrix || Matrix.I(4);
+        var lightPosition = modelAttribs.lightPosition;
+        if (shader.lightPosition !== undefined && modelAttribs.lightPosition.elements.equals(shader.lightPosition.elements)) {
+            modelAttribs.lightPosition = undefined;
         }
+
         if (modelAttribs.depthBiasPMatrix !== undefined) {
-            modelAttribs.depthBiasMVP = { matrix: modelAttribs.depthBiasPMatrix.matrix.x(
-                modelAttribs.mMatrix.matrix).x(Matrix.TranslateToPosition(modelAttribs.lightPosition.matrix)) };
+            modelAttribs.depthBiasMVP = Matrix.multiplyMatrices(modelAttribs.depthBiasPMatrix,
+                mMatrix,
+                Matrix.TranslateToPosition(lightPosition, -1),
+                Matrix.TranslateToPosition(this.position));
         }
+
+        modelAttribs.mMatrix = this.mMatrixAtPosition(mMatrix);
 
         this.shader.switch(gl);
         this.shader.draw(gl, this, modelAttribs);
