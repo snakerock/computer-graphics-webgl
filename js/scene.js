@@ -1,6 +1,6 @@
 function Scene(canvas, gl) {
 
-    this.lightPosition = Vector.create([0.0, 400.0, 300.0]);
+    this.lightPosition = Vector.create([0.0, 60.0, 50.0]);
     this.eyePosition = Vector.create([0.0, 0.0, 0.0]);
     this.objects = [];
 
@@ -8,32 +8,53 @@ function Scene(canvas, gl) {
     this.pMatrix = makePerspective(45, canvas.width / canvas.height, 0.1, 1000);
     this.depthPMatrix = makePerspective(45, 1, 10, 1000);
 
-    this.framebuffer = gl.createFramebuffer();
+    this.depthFramebuffer = gl.createFramebuffer();
     this.depthTexture = gl.createTexture();
-    this.colorTexture = gl.createTexture();
+    this.depthColorTexture = gl.createTexture();
+    this.currentDepthTexture = this.depthColorTexture;
+    this.depthTextureSize = 512;
 
-    gl.bindTexture(gl.TEXTURE_2D, this.colorTexture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1024, 1024, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    this.depthBlurFramebuffer = gl.createFramebuffer();
+    this.depthBlurTexture = gl.createTexture();
 
-    // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
-    gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, 1024, 1024, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+    this.blurShader = new GaussBlurShader(gl);
+
+    gl.bindTexture(gl.TEXTURE_2D, this.depthColorTexture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.depthTextureSize, this.depthTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+    // Depth texture. Slower than a depth buffer, but you can sample it later in your shader
+    gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, this.depthTextureSize, this.depthTextureSize, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LNEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthFramebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.depthTexture, 0);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.colorTexture, 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.depthColorTexture, 0);
+
+    if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+        alert("Depth framebuffer failed");
+    }
+
+    gl.bindTexture(gl.TEXTURE_2D, this.depthBlurTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.depthTextureSize, this.depthTextureSize, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthBlurFramebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.depthBlurTexture, 0);
 
     // Always check that our framebuffer is ok
     if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
-        alert("Framebuffer failed");
+        alert("Depth blur framebuffer failed");
     }
 
     this.biasMatrix = Matrix.create([
@@ -100,11 +121,14 @@ function Scene(canvas, gl) {
 
     this.generateDepthTexture = function(gl) {
         // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+        this.currentDepthTexture = this.depthColorTexture;
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.enable(gl.DEPTH_TEST);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-        gl.viewport(0,0,1024,1024);
-        gl.colorMask(false, false, false, false);
+        //gl.enable(gl.POLYGON_OFFSET_FILL);
+        //gl.polygonOffset(4, 4);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthFramebuffer);
+        gl.viewport(0, 0, this.depthTextureSize, this.depthTextureSize);
+        //gl.colorMask(false, false, false, false);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         var vMatrix = this.lookFromLightToCenter();
@@ -120,6 +144,35 @@ function Scene(canvas, gl) {
             basicModelAttribs,
             [ DepthmapShader ]
         );
+        //gl.disable(gl.POLYGON_OFFSET_FILL);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthBlurFramebuffer);
+        gl.bindTexture(gl.TEXTURE_2D, this.currentDepthTexture);
+        gl.viewport(0, 0, this.depthTextureSize, this.depthTextureSize);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        var blurAttribs = {
+            texture: this.currentDepthTexture,
+            resolution: this.depthTextureSize,
+            radius: this.depthTextureSize / 500,
+            direction: 'x'
+        };
+        this.blurShader.switch(gl);
+        this.blurShader.draw(gl, blurAttribs);
+        this.currentDepthTexture = this.depthBlurTexture;
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthFramebuffer);
+        gl.bindTexture(gl.TEXTURE_2D, this.currentDepthTexture);
+        gl.viewport(0, 0, this.depthTextureSize, this.depthTextureSize);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        var blurAttribs = {
+            texture: this.currentDepthTexture,
+            resolution: this.depthTextureSize,
+            radius: this.depthTextureSize / 500,
+            direction: 'y'
+        };
+        this.blurShader.switch(gl);
+        this.blurShader.draw(gl, blurAttribs);
+        this.currentDepthTexture = this.depthColorTexture;
     };
 
     this.draw = function(canvas, gl) {
@@ -133,9 +186,9 @@ function Scene(canvas, gl) {
         this.generateDepthTexture(gl);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
+        gl.bindTexture(gl.TEXTURE_2D, this.currentDepthTexture);
         gl.viewport(0, 0, canvas.width, canvas.height);
-        gl.colorMask(true, true, true, true);
+        //gl.colorMask(true, true, true, true);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         var depthBiasPMatrix = Matrix.multiplyMatrices(this.biasMatrix, this.depthPMatrix);
@@ -147,7 +200,7 @@ function Scene(canvas, gl) {
                                   lightPosition: this.lightPosition.ensure4(),
                                   vLight: vLightPosition,
                                   eyePosition: vEyePosition,
-                                  depthTexture: this.depthTexture,
+                                  depthTexture: this.currentDepthTexture,
                                   depthBiasPMatrix: depthBiasPMatrix
                                 };
         this.drawSortingShaders(gl, function(gl, scene, object, shader) {

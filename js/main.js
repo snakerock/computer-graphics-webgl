@@ -35,8 +35,8 @@ function start() {
     var lambertShader = new LambertShader(gl);
     var cookTorranceShader = new CookTorranceShader(gl);
     var depthMapshader = new DepthmapShader(gl);
-    scene.objects.push(new Object3D(gl, "terrain.json", lambertShader, depthMapshader, [0.0, -10.0, 0.0], 10));
-    scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, -150.0, -50.0], 0.5));
+    scene.objects.push(new Object3D(gl, "terrain.json", lambertShader, depthMapshader, [0.0, -0.35, 0.0], 10));
+    scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, 0.0, 50.0], 0.1));
     //scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, -200, 50.0]));
     //scene.objects.push(new Object3D(gl, "ozzy-vn.json", new LambertShader(gl), [-200.0, -100, -300.0]));
 

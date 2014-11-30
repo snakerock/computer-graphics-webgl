@@ -42,7 +42,7 @@ void main (void)
 
     vec3 depth = ShadowCoord.xyz / ShadowCoord.w;
     float shadowValue = texture2D(uShadowMap, depth.xy).r;
-    float visibility = depth.z * 0.9999 < shadowValue ? 1.0 : 0.3;
+    float visibility = depth.z < shadowValue ? 1.0 : 0.3;
 
     gl_FragColor = vec4(visibility * vColor.xyz * cosNL * (diffColor + specColor * Rs), 1.0);
 }
