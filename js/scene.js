@@ -45,16 +45,14 @@ function Scene(canvas, gl) {
 
     this.angleX = 0;
     this.angleY = 0;
-    this.oldZoom = 0;
     this.zoom = 0;
 
     this.vRotateXY = function(dx, dy) {
-        this.angleY = dx;
-        this.angleX = dy;
+        this.angleY += dx;
+        this.angleX += dy;
     };
 
     this.vTranslate = function(z) {
-        this.oldZoom = this.zoom;
         this.zoom += z;
     };
 
@@ -128,13 +126,10 @@ function Scene(canvas, gl) {
         if (this.objects.length == 0) return;
 
         this.vMatrix = Matrix.multiplyMatrices(Matrix.Translation($V([0, 0, this.zoom])).ensure4x4(),
-                Matrix.RotationX(this.angleX).ensure4x4(),
-                Matrix.RotationY(this.angleY).ensure4x4(),
-                Matrix.Translation($V([0, 0, -this.oldZoom])),
-                this.vMatrix
-            );
-        this.oldZoom = this.zoom;
-        this.angleX = this.angleY = 0;
+            Matrix.RotationX(this.angleX).ensure4x4(),
+            Matrix.RotationY(this.angleY).ensure4x4()
+        );
+
         this.generateDepthTexture(gl);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
