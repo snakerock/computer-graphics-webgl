@@ -3,7 +3,6 @@ var gl;
 var scene;
 var isMouseDown = false;
 var mousePos = [0, 0];
-var depthTextureExt;
 
 function start() {
     canvas = $("#glcanvas")[0];
@@ -14,8 +13,9 @@ function start() {
         gl.enable(gl.DEPTH_TEST);                               // Enable depth testing
         gl.depthFunc(gl.LEQUAL);                                // Near things obscure far things
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);    // Clear the color as well as the depth buffer.
-        depthTextureExt = gl.getExtension("WEBGL_depth_texture");
-        gl.getExtension('OES_texture_float');
+        //depthTextureExt = gl.getExtension("WEBGL_depth_texture");
+        //console.log(depthTextureExt);
+        //gl.getExtension('OES_texture_float');
     } else {
         alert("Could not initialize WebGL. Update your browser or check settings.");
         return;
