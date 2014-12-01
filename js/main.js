@@ -57,7 +57,7 @@ function start() {
             if (event.changedTouches !== undefined) {
                 event = event.changedTouches[0];
 
-                if (event.changedTouches.length == 2) {
+                if (event.pageX > canvas.width * 4 / 5) {
                     zooming = true;
                 }
             }
@@ -67,9 +67,9 @@ function start() {
                 drawScene();
             } else {
                 scene.vRotateXY((event.pageX - mousePos[0]) / 100, (event.pageY - mousePos[1]) / 100);
-                mousePos = [event.pageX, event.pageY];
                 drawScene();
             }
+            mousePos = [event.pageX, event.pageY];
         }
     };
     var mouseup = function (event) {
