@@ -12,6 +12,17 @@ varying vec3 n;
 varying vec3 vLighting;
 varying vec4 ShadowCoord;
 
+vec4 getVisibility(void) {
+    vec3 depth = ShadowCoord.xyz / ShadowCoord.w;
+    vec4 vsm = texture2D(uShadowMap, depth.xy);
+    float mu = vsm.x;
+    float s2 = vsm.y - mu*mu;
+    s2 = max(s2, 0.005);
+    float pmax = s2 / ( s2 + (depth.z - mu)*(depth.z - mu) );
+
+    return depth.z < vsm.x ? vec4(1.0) : vec4(vec3(pmax), 1.0);
+}
+
 void main (void)
 {
     const float roughnessVal = 0.15;
@@ -40,9 +51,8 @@ void main (void)
 
     float Rs = min(1.0, (fresnel * geometric * roughness) / (cosNV * cosNL + 1.0e-7));
 
-    vec3 depth = ShadowCoord.xyz / ShadowCoord.w;
-    float shadowValue = texture2D(uShadowMap, depth.xy).r;
-    float visibility = depth.z < shadowValue ? 1.0 : 0.3;
+    vec4 visibility = getVisibility();
+    vec4 color = vec4(vColor.xyz * cosNL * (diffColor + specColor * Rs), 1.0);
 
-    gl_FragColor = vec4(visibility * vColor.xyz * cosNL * (diffColor + specColor * Rs), 1.0);
+    gl_FragColor = visibility * color;
 }

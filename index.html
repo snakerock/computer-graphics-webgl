@@ -20,6 +20,19 @@
     <canvas id="glcanvas">
         Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
     </canvas>
+    <div class="config"><br>
+        <p>Постобработка</p>
+
+        <label>
+            <input type="radio" name="post-processing" value="NoProcessing" onchange="noProcessing()" checked>
+            Без постобработки
+        </label><br/>
+
+        <label>
+            <input type="radio" name="post-processing" value="GaussBlur" onchange="gaussBlur()">
+            Гауссово размытие
+        </label><br/>
+    </div>
     <!--div class="config"><br>
         <p>Модель освещения</p>
 

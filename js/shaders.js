@@ -232,7 +232,11 @@ function GaussBlurShader(gl, shaderProgram) {
             this.texture = modelAttribs.texture;
         }
         if (modelAttribs.resolution !== undefined) {
-            this.resolution = modelAttribs.resolution;
+            this.resolutionX = this.resolutionY = modelAttribs.resolution;
+        }
+        if (modelAttribs.resolutionX !== undefined && modelAttribs.resolutionY !== undefined) {
+            this.resolutionX = modelAttribs.resolutionX;
+            this.resolutionY = modelAttribs.resolutionY;
         }
         if (modelAttribs.radius !== undefined) {
             this.radius = modelAttribs.radius;
@@ -249,7 +253,8 @@ function GaussBlurShader(gl, shaderProgram) {
         gl.enableVertexAttribArray(this.vertexPositionAttribute);
 
         this.textureUniform = gl.getUniformLocation(this.shaderProgram, "uTexture");
-        this.resolutionUniform = gl.getUniformLocation(this.shaderProgram, "uResolution");
+        this.resolutionXUniform = gl.getUniformLocation(this.shaderProgram, "uResolutionX");
+        this.resolutionYUniform = gl.getUniformLocation(this.shaderProgram, "uResolutionY");
         this.radiusUnifrom = gl.getUniformLocation(this.shaderProgram, "uRadius");
         this.directionUniform = gl.getUniformLocation(this.shaderProgram, "uDirection");
     };
@@ -263,8 +268,10 @@ function GaussBlurShader(gl, shaderProgram) {
             gl.uniform1i(this.textureUniform, 0);
         }
 
-        if (modelAttribs.resolution !== undefined) {
-            gl.uniform1f(this.resolutionUniform, this.resolution);
+        if (modelAttribs.resolution !== undefined ||
+            (modelAttribs.resolutionX !== undefined && modelAttribs.resolutionY !== undefined)) {
+            gl.uniform1f(this.resolutionXUniform, this.resolutionX);
+            gl.uniform1f(this.resolutionYUniform, this.resolutionY);
         }
         if (modelAttribs.radius !== undefined) {
             gl.uniform1f(this.radiusUnifrom, this.radius);
@@ -278,8 +285,11 @@ function GaussBlurShader(gl, shaderProgram) {
         if (this.verticesBuffer === undefined) {
             this.verticesBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
-            var v = 1;//this.resolution;
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, v, 0, 0, v, 0, v, v, 0, v, v]), gl.STATIC_DRAW);
+            //var v = 1;//this.resolution;
+            var vx = this.resolutionX;
+            var vy = this.resolutionY;
+            vx = vy = 1;
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, vx, 0, 0, vy, 0, vy, vx, 0, vx, vy]), gl.STATIC_DRAW);
         } else {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);
         }

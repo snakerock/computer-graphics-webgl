@@ -57,6 +57,124 @@ function Scene(canvas, gl) {
         alert("Depth blur framebuffer failed");
     }
 
+    this.renderFramebuffer = gl.createFramebuffer();
+    this.postProccessFramebuffer = gl.createFramebuffer();
+
+    this.createRenderPPTextures = function(gl) {
+        gl.deleteTexture(this.renderTexture);
+        gl.deleteTexture(this.renderDepthTexture);
+        gl.deleteTexture(this.postProccessTexture);
+        gl.deleteTexture(this.postProccessDepthTexture);
+
+        this.renderTexture = gl.createTexture();
+        this.renderDepthTexture = gl.createTexture();
+        this.postProccessTexture = gl.createTexture();
+        this.postProccessDepthTexture = gl.createTexture();
+
+        gl.bindTexture(gl.TEXTURE_2D, this.renderTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+        gl.bindTexture(gl.TEXTURE_2D, this.renderDepthTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, canvas.width, canvas.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LNEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.renderFramebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.renderTexture, 0);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.renderDepthTexture, 0);
+
+        // Always check that our framebuffer is ok
+        if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+            alert("Render framebuffer failed");
+        }
+
+        gl.bindTexture(gl.TEXTURE_2D, this.postProccessTexture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+        gl.bindTexture(gl.TEXTURE_2D, this.postProccessDepthTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, canvas.width, canvas.height, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LNEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.postProccessFramebuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.postProccessTexture, 0);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, this.postProccessDepthTexture, 0);
+
+        // Always check that our framebuffer is ok
+        if(gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+            alert("Post-process framebuffer failed");
+        }
+    };
+
+    this.createRenderPPTextures(gl);
+
+    this.noProcessing = function() {
+        return;
+    };
+
+    this.gaussBlur = function() {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.postProccessFramebuffer);
+        gl.bindTexture(gl.TEXTURE_2D, this.renderTexture);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        var blurAttribs = {
+            texture: this.renderTexture,
+            resolutionX: canvas.width,
+            resolutionY: canvas.height,
+            radius: 2,
+            direction: 'x'
+        };
+        this.blurShader.switch(gl);
+        this.blurShader.draw(gl, blurAttribs);
+        this.currentDepthTexture = this.depthColorTexture;
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindTexture(gl.TEXTURE_2D, this.postProccessTexture);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        var blurAttribs = {
+            texture: this.postProccessTexture,
+            resolutionX: canvas.width,
+            resolutionY: canvas.height,
+            radius: 2,
+            direction: 'y'
+        };
+        this.blurShader.switch(gl);
+        this.blurShader.draw(gl, blurAttribs);
+        this.currentDepthTexture = this.depthColorTexture;
+    };
+
+    this.processingFrameBuffer = null;
+    this.processing = this.noProcessing;
+
+    this.setPostProcessing = function(processingType) {
+        switch(processingType) {
+            case "NoProcessing":
+                this.processingFrameBuffer = null;
+                this.processing = this.noProcessing;
+                break;
+
+            case "GaussBlur":
+                this.processingFrameBuffer = this.renderFramebuffer;
+                this.processing = this.gaussBlur;
+                break;
+        }
+
+        this.draw(canvas, gl);
+    };
+
     this.biasMatrix = Matrix.create([
         [0.5, 0.0, 0.0, 0.5],
         [0.0, 0.5, 0.0, 0.5],
@@ -185,14 +303,14 @@ function Scene(canvas, gl) {
 
         this.generateDepthTexture(gl);
 
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.processingFrameBuffer);
         gl.bindTexture(gl.TEXTURE_2D, this.currentDepthTexture);
         gl.viewport(0, 0, canvas.width, canvas.height);
         //gl.colorMask(true, true, true, true);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         var depthBiasPMatrix = Matrix.multiplyMatrices(this.biasMatrix, this.depthPMatrix);
-        var vEyePosition = Matrix.multiplyMatrices(this.vMatrix, this.eyePosition.ensure4());
+        var vEyePosition = Matrix.multiplyMatrices(this.eyePosition.ensure4());
         var vLightPosition = this.lookFromLightToCenter();
         var basicModelAttribs = { scene: this,
                                   vMatrix: this.vMatrix,
@@ -212,5 +330,7 @@ function Scene(canvas, gl) {
             },
             basicModelAttribs
         );
+
+        this.processing();
     };
 }

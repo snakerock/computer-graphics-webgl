@@ -13,11 +13,9 @@ vec4 getVisibility(void) {
     vec4 vsm = texture2D(uShadowMap, depth.xy);
     float mu = vsm.x;
     float s2 = vsm.y - mu*mu;
-    s2 = max(s2, 0.002);
+    s2 = max(s2, 0.005);
     float pmax = s2 / ( s2 + (depth.z - mu)*(depth.z - mu) );
 
-    //return vec4(texture2D(uShadowMap, depth.xy).rgb, 1.0);
-    //return depth.z * 0.98 < vsm.x ? vec4(1.0) : vec4(vec3(0.3), 1.0);
     return depth.z < vsm.x ? vec4(1.0) : vec4(vec3(pmax), 1.0);
 }
 

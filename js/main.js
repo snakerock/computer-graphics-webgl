@@ -36,7 +36,7 @@ function start() {
     var cookTorranceShader = new CookTorranceShader(gl);
     var depthMapshader = new DepthmapShader(gl);
     scene.objects.push(new Object3D(gl, "terrain.json", lambertShader, depthMapshader, [0.0, -0.35, 0.0], 10));
-    scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, 0.0, 50.0], 0.1));
+    scene.objects.push(new Object3D(gl, "ozzy.json", cookTorranceShader, depthMapshader, [0.0, 0.0, 50.0], 0.2));
     //scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, -200, 50.0]));
     //scene.objects.push(new Object3D(gl, "ozzy-vn.json", new LambertShader(gl), [-200.0, -100, -300.0]));
 
@@ -90,7 +90,7 @@ function drawScene() {
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    scene.createRenderPPTextures(gl);
     drawScene();
 }
 
@@ -101,6 +101,14 @@ function lambertLighting() {
 }
 
 function cookTorrance() {
+}
+
+function noProcessing() {
+    scene.setPostProcessing("NoProcessing");
+}
+
+function gaussBlur() {
+    scene.setPostProcessing("GaussBlur");
 }
 
 Array.prototype.equals = function (array) {
@@ -125,4 +133,4 @@ Array.prototype.equals = function (array) {
         }
     }
     return true;
-}
+};

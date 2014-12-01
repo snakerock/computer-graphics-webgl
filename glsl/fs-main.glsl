@@ -10,6 +10,7 @@ vec4 getVisibility(void) {
     vec4 vsm = texture2D(uShadowMap, depth.xy);
     float mu = vsm.x;
     float s2 = vsm.y - mu*mu;
+    s2 = max(s2, 0.005);
     float pmax = s2 / ( s2 + (depth.z - mu)*(depth.z - mu) );
 
     return depth.z < vsm.x ? vec4(1.0) : vec4(vec3(pmax), 1.0);
@@ -17,5 +18,5 @@ vec4 getVisibility(void) {
 
 void main(void) {
     vec4 visibility = getVisibility();
-	gl_FragColor = vec4((visibility * vColor).rgb, 1.0);//vec4(texture2D(uShadowMap, depth.xy).rgb / 4.0, 1.0);//vec4(depth.xy, 0.0, 1.0);
+	gl_FragColor = visibility * vColor;
 }
