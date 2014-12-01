@@ -1,6 +1,6 @@
 function Scene(canvas, gl) {
 
-    this.lightPosition = Vector.create([0.0, 60.0, 50.0]);
+    this.lightPosition = Vector.create([0.0, 10.0, 15.0]);
     this.eyePosition = Vector.create([0.0, 0.0, 0.0]);
     this.objects = [];
 
@@ -192,7 +192,7 @@ function Scene(canvas, gl) {
     };
 
     this.vTranslate = function(z) {
-        this.zoom += z;
+        this.zoom += z / 10;
     };
 
     this.setShaderModelAttribs = function(gl, shader, basicModelAttribs) {
@@ -243,7 +243,7 @@ function Scene(canvas, gl) {
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.enable(gl.DEPTH_TEST);
         //gl.enable(gl.POLYGON_OFFSET_FILL);
-        //gl.polygonOffset(4, 4);
+        //gl.polygonOffset(10, -10);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthFramebuffer);
         gl.viewport(0, 0, this.depthTextureSize, this.depthTextureSize);
         //gl.colorMask(false, false, false, false);
@@ -262,7 +262,6 @@ function Scene(canvas, gl) {
             basicModelAttribs,
             [ DepthmapShader ]
         );
-        //gl.disable(gl.POLYGON_OFFSET_FILL);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthBlurFramebuffer);
         gl.bindTexture(gl.TEXTURE_2D, this.currentDepthTexture);
@@ -330,6 +329,7 @@ function Scene(canvas, gl) {
             },
             basicModelAttribs
         );
+        //gl.disable(gl.POLYGON_OFFSET_FILL);
 
         this.processing();
     };
