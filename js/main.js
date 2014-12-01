@@ -23,14 +23,14 @@ function start() {
 
     scene = new Scene(canvas, gl);
     /*for (var x = -400.0; x <= 401.0; x += 200.0) {
-        for (var z = -300.0; z >= -500.0; z -= 100.0) {
-            scene.objects.push (new Object3D(gl,
-                                "ozzy-vn.json",
-                                new CookTorranceShader(gl),
-                                new DepthmapShader(gl),
-                                [x, -200, z]));
-        }
-    }*/
+     for (var z = -300.0; z >= -500.0; z -= 100.0) {
+     scene.objects.push (new Object3D(gl,
+     "ozzy-vn.json",
+     new CookTorranceShader(gl),
+     new DepthmapShader(gl),
+     [x, -200, z]));
+     }
+     }*/
     var noLightShader = new NoLightShader(gl);
     var lambertShader = new LambertShader(gl);
     var cookTorranceShader = new CookTorranceShader(gl);
@@ -43,22 +43,45 @@ function start() {
     $(window).resize(resizeCanvas);
     resizeCanvas();
 
-    $("#glcanvas").mousedown(function (event) {
+    var mousedown = function (event) {
         isMouseDown = true;
-        mousePos = [event.pageX, event.pageY];
-    });
-
-    $("#glcanvas").mousemove(function (event) {
-        if (isMouseDown) {
-            scene.vRotateXY((event.pageX - mousePos[0]) / 100, (event.pageY - mousePos[1]) / 100);
-            mousePos = [event.pageX, event.pageY];
-            drawScene();
+        if (event.changedTouches !== undefined) {
+            event = event.changedTouches[0];
         }
-    });
+        mousePos = [event.pageX, event.pageY];
+    };
+    var mousemove = function (event) {
+        if (isMouseDown) {
+            var zooming = false;
 
-    $("#glcanvas").mouseup(function (event) {
+            if (event.changedTouches !== undefined) {
+                event = event.changedTouches[0];
+
+                if (event.changedTouches.length == 2) {
+                    zooming = true;
+                }
+            }
+
+            if (zooming) {
+                scene.vTranslate(event.pageY - mousePos[1]);
+                drawScene();
+            } else {
+                scene.vRotateXY((event.pageX - mousePos[0]) / 100, (event.pageY - mousePos[1]) / 100);
+                mousePos = [event.pageX, event.pageY];
+                drawScene();
+            }
+        }
+    };
+    var mouseup = function (event) {
         isMouseDown = false;
-    });
+    };
+
+    canvas.addEventListener("touchstart", mousedown, false);
+    canvas.addEventListener("mousedown", mousedown, false);
+    canvas.addEventListener("touchend", mouseup, false);
+    canvas.addEventListener("mouseup", mouseup, false);
+    canvas.addEventListener("touchmove", mousemove, false);
+    canvas.addEventListener("mousemove", mousemove, false);
 
     $("#glcanvas").bind('mousewheel', function(event) {
         var z = event.originalEvent.wheelDelta > 0 ? 10 : -10;
