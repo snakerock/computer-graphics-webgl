@@ -32,6 +32,18 @@
             <input type="radio" name="post-processing" value="GaussBlur" onchange="gaussBlur()">
             Гауссово размытие
         </label><br/>
+
+        <p>Источник освещения</p>
+
+        <label>
+            <input type="radio" name="light-source" value="Moving" onchange="startLightAnimation()">
+            Движущийся
+        </label><br/>
+
+        <label>
+            <input type="radio" name="light-source" value="Still" onchange="stopLightAnimation()" checked>
+            Покоящийся
+        </label><br/>
     </div>
     <!--div class="config"><br>
         <p>Модель освещения</p>

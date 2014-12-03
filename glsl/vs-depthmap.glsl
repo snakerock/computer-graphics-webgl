@@ -1,4 +1,5 @@
-precision mediump float;
+precision highp float;
+
 attribute vec3 aVertexPosition;
 
 uniform mat4 uMMatrix;

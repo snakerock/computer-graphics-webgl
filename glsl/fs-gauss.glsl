@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 //declare uniforms
 uniform sampler2D uTexture;

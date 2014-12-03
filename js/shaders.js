@@ -152,6 +152,11 @@ function LambertShader(gl, shaderProgram) {
         if (modelAttribs.lightPosition !== undefined) {
             this.lightPosition = modelAttribs.lightPosition.ensure4();
         }
+
+
+        if (modelAttribs.eyePosition !== undefined) {
+            this.eyePosition = modelAttribs.eyePosition.ensure4();
+        }
     };
 
     var baseSwitch = shader.switch;
@@ -163,6 +168,7 @@ function LambertShader(gl, shaderProgram) {
 
         this.nUniform = gl.getUniformLocation(this.shaderProgram, "uNormalMatrix");
         this.lightUniform = gl.getUniformLocation(this.shaderProgram, "uLightPosition");
+        this.eyeUniform = gl.getUniformLocation(this.shaderProgram, "uEyePosition");
     };
 
     var baseSetUniforms = shader.setUniforms;
@@ -175,6 +181,10 @@ function LambertShader(gl, shaderProgram) {
 
         if (modelAttribs.lightPosition !== undefined) {
             gl.uniform4fv(this.lightUniform, new Float32Array(this.lightPosition.flatten()));
+        }
+
+        if (modelAttribs.eyePosition !== undefined) {
+            gl.uniform4fv(this.eyeUniform, new Float32Array(this.eyePosition.flatten()));
         }
     };
 

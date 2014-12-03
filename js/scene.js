@@ -1,6 +1,6 @@
 function Scene(canvas, gl) {
 
-    this.lightPosition = Vector.create([0.0, 10.0, 15.0]);
+    this.lightPosition = Vector.create([0.0, 300.0, 600.0]);
     this.eyePosition = Vector.create([0.0, 0.0, 0.0]);
     this.objects = [];
 
@@ -184,7 +184,7 @@ function Scene(canvas, gl) {
     };
 
     this.vTranslate = function(z) {
-        this.zoom += z / 10;
+        this.zoom += z;
     };
 
     this.setShaderModelAttribs = function(gl, shader, basicModelAttribs) {
@@ -235,7 +235,7 @@ function Scene(canvas, gl) {
         gl.bindTexture(gl.TEXTURE_2D, null);
         gl.enable(gl.DEPTH_TEST);
         //gl.enable(gl.POLYGON_OFFSET_FILL);
-        //gl.polygonOffset(10, -10);
+        //gl.polygonOffset(1, 2);
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.depthFramebuffer);
         gl.viewport(0, 0, this.depthTextureSize, this.depthTextureSize);
         //gl.colorMask(false, false, false, false);
@@ -262,7 +262,7 @@ function Scene(canvas, gl) {
         var blurAttribs = {
             texture: this.currentDepthTexture,
             resolution: this.depthTextureSize,
-            radius: this.depthTextureSize / 500,
+            radius: 0,//this.depthTextureSize / 500,
             direction: 'x'
         };
         this.blurShader.switch(gl);
@@ -276,7 +276,7 @@ function Scene(canvas, gl) {
         var blurAttribs = {
             texture: this.currentDepthTexture,
             resolution: this.depthTextureSize,
-            radius: this.depthTextureSize / 500,
+            radius: 0,//this.depthTextureSize / 500,
             direction: 'y'
         };
         this.blurShader.switch(gl);
@@ -301,7 +301,8 @@ function Scene(canvas, gl) {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         var depthBiasPMatrix = Matrix.multiplyMatrices(this.biasMatrix, this.depthPMatrix);
-        var vEyePosition = Matrix.multiplyMatrices(this.eyePosition.ensure4());
+        var vEyePosition = Matrix.multiplyMatrices(this.vMatrix.inverse(), this.eyePosition.ensure4());
+        console.log(vEyePosition.elements);
         var vLightPosition = this.lookFromLightToCenter();
         var basicModelAttribs = { scene: this,
                                   vMatrix: this.vMatrix,
@@ -325,4 +326,24 @@ function Scene(canvas, gl) {
 
         this.processing();
     };
+
+    this.startLightAnimation = function(canvas, gl) {
+        var scene = this;
+        var k = 0.1;
+        this.lightAnimationInc = this.lightAnimationInc || -1;
+
+        this.lightAnimation = setInterval(function() {
+            if (Math.abs(scene.lightPosition.elements[2]) > 20.0) {
+                scene.lightAnimationInc *= -1;
+            }
+            scene.lightPosition.elements[2] += scene.lightAnimationInc * k;
+            scene.draw(canvas, gl);
+        }, 100);
+
+        this.stopLightAnimation = function() {
+            if (this.lightAnimation !== undefined) {
+                clearInterval(this.lightAnimation);
+            }
+        };
+    }
 }

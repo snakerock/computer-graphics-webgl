@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 attribute vec3 aVertexPosition;
 attribute vec3 aVertexNormal;
@@ -25,7 +25,7 @@ void main(void)
     vec4 p4 = uVMatrix * uMMatrix * vec4(aVertexPosition, 1.0);
     vec3 p3 = vec3(p4);
 
-    l = normalize(vec3(uLightPosition - p4));
+    l = normalize(vec3(uVMatrix * uLightPosition - p4));
     n = normalize(vec3(uNormalMatrix * vec4(aVertexNormal, 1.0)));
     v = normalize(vec3(uEyePosition - p4));
     h = normalize(l + v);

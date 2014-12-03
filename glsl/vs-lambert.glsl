@@ -1,4 +1,4 @@
-precision mediump float;
+precision highp float;
 
 attribute vec3 aVertexPosition;
 attribute vec3 aVertexNormal;
@@ -8,6 +8,7 @@ varying vec4 vColor;
 varying vec3 l;
 varying vec3 n;
 varying vec4 ShadowCoord;
+varying vec4 vCoord;
 
 uniform vec4 uLightPosition;
 
@@ -19,7 +20,8 @@ uniform mat4 uDepthBiasMVP;
 
 void main(void)
 {
-    vec4 p4 = uVMatrix * uMMatrix * vec4(aVertexPosition, 1.0);
+    vCoord = uMMatrix * vec4(aVertexPosition, 1.0);
+    vec4 p4 = uVMatrix *  vCoord;
     vec3 p3 = vec3(p4);
 
     l = normalize(vec3(uVMatrix * uLightPosition - p4));
