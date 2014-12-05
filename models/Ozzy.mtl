@@ -1,0 +1,142 @@
+# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
+# File Created: 16.02.2013 22:30:06
+
+newmtl 08___Defaulthggh
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Face.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Face.dds
+
+newmtl 02___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Mouth.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Mouth.dds
+
+newmtl 02___Defaulthjhj
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_eyes.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_eyes.dds
+
+newmtl 02___Defaultjhhjghg
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Legs.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Legs.dds
+
+newmtl 02___Defaultjhhj
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Hands.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Hands.dds
+
+newmtl 02___Defaultjh
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Body.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Body.dds
+
+newmtl 02___Defaulth
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Feet.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Feet.dds
+
+newmtl 02___Defaultgh
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Accessories.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Accessories.dds
+
+newmtl 08___Default
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Hair.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Hair.dds
+
+newmtl 08___Defaulthjhj
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	Tr 0.0000
+	Tf 1.0000 1.0000 1.0000 
+	illum 2
+	Ka 0.5882 0.5882 0.5882
+	Kd 0.5882 0.5882 0.5882
+	Ks 0.0000 0.0000 0.0000
+	Ke 0.0000 0.0000 0.0000
+	map_Ka F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Glasses.dds
+	map_Kd F:\Users\tommy\Documents\Ripped video game models\Guitar Hero 4\Ozzy\Ozzy_Glasses.dds

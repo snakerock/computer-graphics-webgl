@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Computer Graphics</title>
+
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+    <script src="js/jquery.js"></script>
+    <script src="js/sylvester.js"></script>
+    <script src="js/glUtils.js"></script>
+    <script src="js/models.js"></script>
+    <script src="js/shaders.js"></script>
+    <script src="js/object3D.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/shaderHandler.js"></script>
+    <script src="js/main.js"></script>
+</head>
+
+<body onload="start()">
+    <canvas id="glcanvas">
+        Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
+    </canvas>
+    <div class="config"><br>
+        <p>Постобработка</p>
+
+        <label>
+            <input type="radio" name="post-processing" value="NoProcessing" onchange="noProcessing()" checked>
+            Без постобработки
+        </label><br/>
+
+        <label>
+            <input type="radio" name="post-processing" value="GaussBlur" onchange="gaussBlur()">
+            Гауссово размытие
+        </label><br/>
+
+        <p>Источник освещения</p>
+
+        <label>
+            <input type="radio" name="light-source" value="Moving" onchange="startLightAnimation()">
+            Движущийся
+        </label><br/>
+
+        <label>
+            <input type="radio" name="light-source" value="Still" onchange="stopLightAnimation()" checked>
+            Покоящийся
+        </label><br/>
+    </div>
+    <!--div class="config"><br>
+        <p>Модель освещения</p>
+
+        <label>
+            <input type="radio" name="lighting" value="NoLighting" onchange="noLighting()">
+            Без освещения
+        </label><br/>
+
+        <label>
+            <input type="radio" name="lighting" value="Lambert" onchange="lambertLighting()" checked>
+            Ламберт
+        </label><br/>
+
+        <label>
+            <input type="radio" name="lighting" value="CookTorrance" onchange="cookTorrance()">
+            Кук-Торранс
+        </label><br/>
+    </div-->
+</body>
+
+</html>
