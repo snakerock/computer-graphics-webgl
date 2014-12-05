@@ -1,6 +1,6 @@
 function Scene(canvas, gl) {
 
-    this.lightPosition = Vector.create([0.0, 300.0, 600.0]);
+    this.lightPosition = Vector.create([0.0, 10.0, 15.0]);
     this.eyePosition = Vector.create([0.0, 0.0, 0.0]);
     this.objects = [];
 
@@ -184,7 +184,7 @@ function Scene(canvas, gl) {
     };
 
     this.vTranslate = function(z) {
-        this.zoom += z;
+        this.zoom += z / 10;
     };
 
     this.setShaderModelAttribs = function(gl, shader, basicModelAttribs) {
@@ -262,7 +262,7 @@ function Scene(canvas, gl) {
         var blurAttribs = {
             texture: this.currentDepthTexture,
             resolution: this.depthTextureSize,
-            radius: 0,//this.depthTextureSize / 500,
+            radius: this.depthTextureSize / 500,
             direction: 'x'
         };
         this.blurShader.switch(gl);
@@ -276,7 +276,7 @@ function Scene(canvas, gl) {
         var blurAttribs = {
             texture: this.currentDepthTexture,
             resolution: this.depthTextureSize,
-            radius: 0,//this.depthTextureSize / 500,
+            radius: this.depthTextureSize / 500,
             direction: 'y'
         };
         this.blurShader.switch(gl);
@@ -302,7 +302,6 @@ function Scene(canvas, gl) {
 
         var depthBiasPMatrix = Matrix.multiplyMatrices(this.biasMatrix, this.depthPMatrix);
         var vEyePosition = Matrix.multiplyMatrices(this.vMatrix.inverse(), this.eyePosition.ensure4());
-        console.log(vEyePosition.elements);
         var vLightPosition = this.lookFromLightToCenter();
         var basicModelAttribs = { scene: this,
                                   vMatrix: this.vMatrix,
@@ -311,7 +310,8 @@ function Scene(canvas, gl) {
                                   vLight: vLightPosition,
                                   eyePosition: vEyePosition,
                                   depthTexture: this.currentDepthTexture,
-                                  depthBiasPMatrix: depthBiasPMatrix
+                                  depthBiasPMatrix: depthBiasPMatrix,
+                                  fogDepth: 1.0
                                 };
         this.drawSortingShaders(gl, function(gl, scene, object, shader) {
                 var modelAttribs = {

@@ -83,6 +83,16 @@ function ColorShader(gl, shaderProgram) {
         if (modelAttribs.depthTexture !== undefined) {
             this.depthTexture = modelAttribs.depthTexture;
         }
+        if (modelAttribs.eyePosition !== undefined) {
+            this.eyePosition = modelAttribs.eyePosition.ensure4();
+        }
+
+        if (modelAttribs.fogDepth !== undefined) {
+            this.fogDepth = modelAttribs.fogDepth;
+        } else if (this.fogDepth === undefined) {
+            modelAttribs.fogDepth = -1.0;
+            this.fogDepth = modelAttribs.fogDepth;
+        }
     };
 
     var baseSwitch = shader.switch;
@@ -94,6 +104,8 @@ function ColorShader(gl, shaderProgram) {
 
         this.depthBiasMVPUniform = gl.getUniformLocation(this.shaderProgram, "uDepthBiasMVP");
         this.shadowMapUniform = gl.getUniformLocation(this.shaderProgram, "uShadowMap");
+        this.eyeUniform = gl.getUniformLocation(this.shaderProgram, "uEyePosition");
+        this.fogDepthUniform = gl.getUniformLocation(this.shaderProgram, "uFogDepth");
     };
 
     var baseSetAttribs = shader.setAttribs;
@@ -116,6 +128,14 @@ function ColorShader(gl, shaderProgram) {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, this.depthTexture);
             gl.uniform1i(this.shadowMapUniform, 0);
+        }
+
+        if (modelAttribs.eyePosition !== undefined) {
+            gl.uniform4fv(this.eyeUniform, new Float32Array(this.eyePosition.flatten()));
+        }
+
+        if (modelAttribs.fogDepth !== undefined) {
+            gl.uniform1f(this.fogDepthUniform, this.fogDepth);
         }
     };
 
@@ -152,11 +172,6 @@ function LambertShader(gl, shaderProgram) {
         if (modelAttribs.lightPosition !== undefined) {
             this.lightPosition = modelAttribs.lightPosition.ensure4();
         }
-
-
-        if (modelAttribs.eyePosition !== undefined) {
-            this.eyePosition = modelAttribs.eyePosition.ensure4();
-        }
     };
 
     var baseSwitch = shader.switch;
@@ -168,7 +183,6 @@ function LambertShader(gl, shaderProgram) {
 
         this.nUniform = gl.getUniformLocation(this.shaderProgram, "uNormalMatrix");
         this.lightUniform = gl.getUniformLocation(this.shaderProgram, "uLightPosition");
-        this.eyeUniform = gl.getUniformLocation(this.shaderProgram, "uEyePosition");
     };
 
     var baseSetUniforms = shader.setUniforms;
@@ -181,10 +195,6 @@ function LambertShader(gl, shaderProgram) {
 
         if (modelAttribs.lightPosition !== undefined) {
             gl.uniform4fv(this.lightUniform, new Float32Array(this.lightPosition.flatten()));
-        }
-
-        if (modelAttribs.eyePosition !== undefined) {
-            gl.uniform4fv(this.eyeUniform, new Float32Array(this.eyePosition.flatten()));
         }
     };
 
@@ -203,29 +213,6 @@ function LambertShader(gl, shaderProgram) {
 function CookTorranceShader(gl, shaderProgram) {
     var shader = new LambertShader(gl, shaderProgram || { vertexUrl: 'vs-cook-torrance.glsl', fragmentUrl: 'fs-cook-torrance.glsl' });
 
-    var baseSetModelAttribs = shader.setModelAttribs;
-    shader.setModelAttribs = function(gl, modelAttribs) {
-        baseSetModelAttribs.call(this, gl, modelAttribs);
-
-        if (modelAttribs.eyePosition !== undefined) {
-            this.eyePosition = modelAttribs.eyePosition.ensure4();
-        }
-    };
-
-    var baseSwitch = shader.switch;
-    shader.switch = function(gl, scene) {
-        baseSwitch.call(this, gl, scene);
-        this.eyeUniform = gl.getUniformLocation(this.shaderProgram, "uEyePosition");
-    };
-
-    var baseSetUniforms = shader.setUniforms;
-    shader.setUniforms = function(gl, modelAttribs) {
-        baseSetUniforms.call(this, gl, modelAttribs);
-
-        if (modelAttribs.eyePosition !== undefined) {
-            gl.uniform4fv(this.eyeUniform, new Float32Array(this.eyePosition.flatten()));
-        }
-    };
 
     shader.constructor = CookTorranceShader;
     return shader;
