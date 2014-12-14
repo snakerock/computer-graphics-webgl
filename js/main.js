@@ -77,15 +77,21 @@ function start() {
     canvas.addEventListener("touchmove", mousemove, false);
     canvas.addEventListener("mousemove", mousemove, false);
 
-    canvas.addEventListener("mousewheel", function(event) {
-        var z = event.wheelDelta > 0 ? 10 : -10;
-        scene.zoomScene(z);
-        drawScene();
-    }, false);
+    canvas.addEventListener("mousewheel", zoom, false);
+    canvas.addEventListener("DOMMouseScroll", zoom, false);
 
     setTimeout(function() {
         document.getElementById("info").style.display = "none";
     }, 8000);
+}
+
+function zoom(event) {
+    var delta = Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
+    var z = delta > 0 ? 10 : -10;
+    scene.zoomScene(z);
+    drawScene();
+    event.preventDefault();
+    return false;
 }
 
 function initWebGL(canvas) {
