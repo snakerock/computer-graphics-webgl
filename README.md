@@ -14,7 +14,9 @@ Computer Graphics (WebGL)
 * Нечеткие тени (Variance Shadow Maps) - 4 балла
 
 Для работы требуется браузер, поддерживающий WebGL.
-Для запуска открыть index.html.
-Исходные тексты в папках js, glsl.
+Для запуска:
+* Запустить локальный сервер: Mongoose, в корне архива mongoose-linux-x86_64 для Linux, mongoose-windows.exe для Windows, либо любой другой файловый сервер для раздачи папки проекта
+* Открыть проект в браузере по адресу http://localhost:8080/, если использовался приложенный Mongoose, либо по адресу, на который настроен ваш сервер
+* Также доступна постоянно обновляемая онлайн-версия проекта: http://snakerock.github.io/computer-graphics-webgl/
 
-Доступна постоянно обновляемая онлайн-версия проекта: http://snakerock.github.io/computer-graphics-webgl/
+Исходные тексты в папках js, glsl.

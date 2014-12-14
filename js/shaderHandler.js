@@ -26,7 +26,7 @@ shaderHandler.loadShader = function(file, type) {
 
     $.ajax({
         async: false,
-        url: "glssl/" + file + ".glsl",
+        url: "glsl/" + file + ".glsl",
         dataType: "text",
         success: function(result) {
             shaderSource = { script: result, type: type, file: file };
