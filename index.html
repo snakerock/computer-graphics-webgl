@@ -5,7 +5,7 @@
     <title>Computer Graphics</title>
 
     <link rel="stylesheet" type="text/css" href="css/index.css">
-    <script src="js/jquery.js"></script>
+    <script src="js/jquery-2.1.1.min.js"></script>
     <script src="js/sylvester.js"></script>
     <script src="js/glUtils.js"></script>
     <script src="js/models.js"></script>
@@ -14,25 +14,412 @@
     <script src="js/scene.js"></script>
     <script src="js/shaderHandler.js"></script>
     <script src="js/main.js"></script>
+
+    <script id="vs-main" type="x-shader/x-vertex">
+        precision highp float;
+
+        attribute vec3 aVertexPosition;
+        attribute vec3 aVertexColor;
+
+        uniform mat4 uMMatrix;
+        uniform mat4 uVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat4 uDepthBiasMVP;
+
+        varying vec4 vColor;
+        varying vec4 ShadowCoord;
+        varying vec4 vCoord;
+
+        void main(void) {
+            vColor = vec4(aVertexColor, 1.0);
+            vCoord = uMMatrix * vec4(aVertexPosition, 1.0);
+            gl_Position = uPMatrix * uVMatrix * vCoord;
+
+            ShadowCoord = uDepthBiasMVP * vec4(aVertexPosition, 1.0);
+        }
+    </script>
+    <script id="fs-main" type="x-shader/x-fragment">
+        precision highp float;
+
+        uniform sampler2D uShadowMap;
+        uniform vec4 uEyePosition;
+        uniform float uFogDepth;
+
+        varying vec4 vColor;
+        varying vec4 ShadowCoord;
+        varying vec4 vCoord;
+
+        float ReduceLightBleeding(float p_max, float Amount)
+        {
+          // Remove the [0, Amount] tail and linearly rescale (Amount, 1].
+           return clamp((p_max - Amount) / (1.0 - Amount), 0.0, 1.0);
+        }
+
+        vec3 getVisibility(void) {
+            vec3 depth = ShadowCoord.xyz / ShadowCoord.w;
+            if (depth.x < 0.0 || depth.x > 1.0 || depth.y < 0.0 || depth.y > 1.0) {
+                return vec3(1.0);
+            }
+            vec4 vsm = texture2D(uShadowMap, depth.xy);
+            float mu = vsm.x;
+            float s2 = vsm.y - mu*mu;
+            s2 = max(s2, 0.005);
+            float pmax = s2 / ( s2 + (depth.z - mu)*(depth.z - mu) );
+            pmax = ReduceLightBleeding(pmax, 0.3);
+
+            return depth.z - 0.01 < vsm.x ? vec3(1.0) : vec3(pmax);
+        }
+
+        vec3 getFogVisibility(void) {
+
+            if (vCoord.y > uFogDepth && uEyePosition.y > uFogDepth || uFogDepth < 0.0) {
+                return vec3(0.0);
+            }
+            vec4 lVector = vCoord - uEyePosition;
+            vec4 v = vCoord.y <= uFogDepth ? vCoord : vCoord + (uFogDepth - vCoord.y) / lVector.y * lVector;
+            vec4 eye = uEyePosition.y <= uFogDepth ? uEyePosition : uEyePosition + (uFogDepth - uEyePosition.y) / lVector.y * lVector;
+            lVector = v - eye;
+            float l = length(lVector);
+            float sinAlpha = lVector.y / l;
+            float visibility = 1.0 - (eye.y + l * sinAlpha / 2.0) / (l / 2.0);
+            visibility = max(visibility, 0.0);
+
+            return vec3(visibility);
+        }
+
+        void main(void) {
+            vec3 visibility = getVisibility();
+            gl_FragColor = vec4(getFogVisibility() + visibility * vColor.rgb, 1.0);
+        }
+    </script>
+
+    <script id="vs-lambert" type="x-shader/x-vertex">
+        precision highp float;
+
+        attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
+        attribute vec3 aVertexColor;
+
+        varying vec4 vColor;
+        varying vec3 l;
+        varying vec3 n;
+        varying vec4 ShadowCoord;
+        varying vec4 vCoord;
+
+        uniform vec4 uLightPosition;
+
+        uniform mat4 uMMatrix;
+        uniform mat4 uVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat4 uNormalMatrix;
+        uniform mat4 uDepthBiasMVP;
+
+        void main(void)
+        {
+            vCoord = uMMatrix * vec4(aVertexPosition, 1.0);
+            vec4 p4 = uVMatrix *  vCoord;
+            vec3 p3 = vec3(p4);
+
+            l = normalize(vec3(uVMatrix * uLightPosition - p4));
+            n = normalize(vec3(uNormalMatrix * vec4(aVertexNormal, 1.0)));
+            vColor = vec4(aVertexColor, 1.0);
+
+            gl_Position = uPMatrix * p4;
+            ShadowCoord = uDepthBiasMVP * vec4(aVertexPosition, 1.0);
+        }
+    </script>
+    <script id="fs-lambert" type="x-shader/x-fragment">
+        precision highp float;
+
+        uniform sampler2D uShadowMap;
+        uniform vec4 uEyePosition;
+        uniform vec3 uLightColor;
+        uniform vec3 uLightAmbientColor;
+        uniform float uFogDepth;
+
+        varying vec4 vColor;
+        varying vec3 l;
+        varying vec3 n;
+        varying vec3 vLighting;
+        varying vec4 ShadowCoord;
+        varying vec4 vCoord;
+
+        float ReduceLightBleeding(float p_max, float Amount)
+        {
+           return clamp((p_max - Amount) / (1.0 - Amount), 0.0, 1.0);
+        }
+
+        vec3 getVisibility(void) {
+            vec3 depth = ShadowCoord.xyz / ShadowCoord.w;
+            if (depth.x < 0.0 || depth.x > 1.0 || depth.y < 0.0 || depth.y > 1.0) {
+                return vec3(1.0);
+            }
+            vec4 vsm = texture2D(uShadowMap, depth.xy);
+            float mu = vsm.x;
+            float s2 = vsm.y - mu*mu;
+            s2 = max(s2, 0.005);
+            float pmax = s2 / ( s2 + (depth.z - mu)*(depth.z - mu) );
+            pmax = ReduceLightBleeding(pmax, 0.3);
+
+            return depth.z - 0.01 < vsm.x ? vec3(1.0) : vec3(pmax);
+        }
+
+        vec3 getFogVisibility(void) {
+
+            if (vCoord.y > uFogDepth && uEyePosition.y > uFogDepth || uFogDepth < 0.0) {
+                return vec3(0.0);
+            }
+            vec4 lVector = vCoord - uEyePosition;
+            vec4 v = vCoord.y <= uFogDepth ? vCoord : vCoord + (uFogDepth - vCoord.y) / lVector.y * lVector;
+            vec4 eye = uEyePosition.y <= uFogDepth ? uEyePosition : uEyePosition + (uFogDepth - uEyePosition.y) / lVector.y * lVector;
+            lVector = v - eye;
+            float l = length(lVector);
+            float sinAlpha = lVector.y / l;
+            float visibility = 1.0 - (eye.y + l * sinAlpha / 2.0) / (l / 2.0);
+            visibility = max(visibility, 0.0);
+
+            return vec3(visibility);
+        }
+
+        void main (void)
+        {
+            vec3 n2 = normalize(n);
+            vec3 l2 = normalize(l);
+
+            vec3 visibility = getVisibility();
+            vec3 color = vColor.rgb * uLightColor * max(dot(n2, l2), 0.0);
+
+            gl_FragColor = vec4(getFogVisibility() + uLightAmbientColor + visibility * color, 1.0);
+        }
+    </script>
+
+    <script id="vs-cook-torrance" type="x-shader/x-vertex">
+        precision highp float;
+
+        attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
+        attribute vec3 aVertexColor;
+
+        varying vec4 vColor;
+        varying vec4 ShadowCoord;
+        varying vec3 l;
+        varying vec3 h;
+        varying vec3 v;
+        varying vec3 n;
+        varying vec4 vCoord;
+
+        uniform vec4 uLightPosition;
+        uniform vec4 uEyePosition;
+        uniform mat4 uDepthBiasMVP;
+
+        uniform mat4 uMMatrix;
+        uniform mat4 uVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat4 uNormalMatrix;
+
+        void main(void)
+        {
+            vCoord = uMMatrix * vec4(aVertexPosition, 1.0);
+            vec4 p4 = uVMatrix * vCoord;
+            vec3 p3 = vec3(p4);
+
+            l = normalize(vec3(uVMatrix * uLightPosition - p4));
+            n = normalize(vec3(uNormalMatrix * vec4(aVertexNormal, 1.0)));
+            v = normalize(vec3(uEyePosition - p4));
+            h = normalize(l + v);
+            vColor = vec4(aVertexColor, 1.0);
+
+            gl_Position = uPMatrix * p4;
+            ShadowCoord = uDepthBiasMVP * vec4(aVertexPosition, 1.0);
+        }
+    </script>
+    <script id="fs-cook-torrance" type="x-shader/x-fragment">
+        precision highp float;
+
+        uniform sampler2D uShadowMap;
+        uniform vec4 uEyePosition;
+        uniform vec3 uLightColor;
+        uniform vec3 uLightSpecColor;
+        uniform vec3 uLightAmbientColor;
+        uniform float uFogDepth;
+
+        varying vec4 vColor;
+
+        varying vec3 l;
+        varying vec3 h;
+        varying vec3 v;
+        varying vec3 n;
+
+        varying vec3 vLighting;
+        varying vec4 ShadowCoord;
+        varying vec4 vCoord;
+
+        float ReduceLightBleeding(float p_max, float Amount)
+        {
+          // Remove the [0, Amount] tail and linearly rescale (Amount, 1].
+           return clamp((p_max - Amount) / (1.0 - Amount), 0.0, 1.0);
+        }
+
+        vec3 getVisibility(void) {
+            vec3 depth = ShadowCoord.xyz / ShadowCoord.w;
+            if (depth.x < 0.0 || depth.x > 1.0 || depth.y < 0.0 || depth.y > 1.0) {
+                return vec3(1.0);
+            }
+            vec4 vsm = texture2D(uShadowMap, depth.xy);
+            float mu = vsm.x;
+            float s2 = vsm.y - mu*mu;
+            s2 = max(s2, 0.005);
+            float pmax = s2 / ( s2 + (depth.z - mu)*(depth.z - mu) );
+            pmax = ReduceLightBleeding(pmax, 0.3);
+
+            return depth.z - 0.01 < vsm.x ? vec3(1.0) : vec3(pmax);
+        }
+
+        vec3 getFogVisibility(void) {
+
+            if (vCoord.y > uFogDepth && uEyePosition.y > uFogDepth || uFogDepth < 0.0) {
+                return vec3(0.0);
+            }
+            vec4 lVector = vCoord - uEyePosition;
+            vec4 v = vCoord.y <= uFogDepth ? vCoord : vCoord + (uFogDepth - vCoord.y) / lVector.y * lVector;
+            vec4 eye = uEyePosition.y <= uFogDepth ? uEyePosition : uEyePosition + (uFogDepth - uEyePosition.y) / lVector.y * lVector;
+            lVector = v - eye;
+            float l = length(lVector);
+            float sinAlpha = lVector.y / l;
+            float visibility = 1.0 - (eye.y + l * sinAlpha / 2.0) / (l / 2.0);
+            visibility = max(visibility, 0.0);
+
+            return vec3(visibility);
+        }
+
+        void main (void)
+        {
+            float roughnessVal = 0.15;
+            vec3 diffColor = uLightColor;
+            vec3 specColor = uLightSpecColor;
+
+            vec3 n2 = normalize(n);
+            vec3 l2 = normalize(l);
+            vec3 v2 = normalize(v);
+            vec3 h2 = normalize(h);
+
+            float cosNL = max(dot(n2, l2), 0.0);
+            float cosNV = max(dot(n2, v2), 0.0);
+            float cosNH = max(dot(n2, h2), 1.0e-7);
+            float cosVH = max(dot(v2, h2), 0.0);
+
+            float geometric = 2.0 * cosNH/ cosVH;
+            geometric = min(1.0, geometric * min(cosNV, cosNL));
+
+            float roughness2 = roughnessVal * roughnessVal;
+            float cosNH2 = cosNH * cosNH;
+            float cosNH2r = 1.0 / (cosNH2 * roughness2);
+            float roughnessE = (cosNH2 - 1.0) * cosNH2r;
+            float roughness = exp(roughnessE) * cosNH2r / (4.0 * cosNH2);
+            float fresnel = 1.0 / (1.0 + cosNV);
+
+            float Rs = min(1.0, (fresnel * geometric * roughness) / (cosNV * cosNL + 1.0e-7));
+
+            vec3 visibility = getVisibility();
+            vec3 color = vColor.rgb * cosNL * (uLightColor + uLightSpecColor * Rs);
+
+            gl_FragColor = vec4(getFogVisibility() + uLightAmbientColor + visibility * color, 1.0);
+        }
+    </script>
+
+    <script id="vs-depthmap" type="x-shader/x-vertex">
+        precision highp float;
+
+        attribute vec3 aVertexPosition;
+
+        uniform mat4 uMMatrix;
+        uniform mat4 uVMatrix;
+        uniform mat4 uPMatrix;
+
+        void main(){
+            gl_Position = uPMatrix * uVMatrix * uMMatrix * vec4(aVertexPosition, 1.0);
+}
+    </script>
+    <script id="fs-depthmap" type="x-shader/x-fragment">
+        precision highp float;
+
+        void main(){
+            float z = gl_FragCoord.z;
+
+            gl_FragColor = vec4(z, z*z, z, 1.0);
+        }
+    </script>
+
+    <script id="vs-gauss" type="x-shader/x-vertex">
+        precision highp float;
+
+        attribute vec2 aVertexPosition;
+
+        void main(void) {
+            gl_Position = vec4(aVertexPosition.xy * 2.0 - 1.0, 0.0, 1.0);
+        }
+    </script>
+    <script id="fs-gauss" type="x-shader/x-fragment">
+        precision highp float;
+
+        //declare uniforms
+        uniform sampler2D uTexture;
+        uniform float uResolutionX;
+        uniform float uResolutionY;
+        uniform float uRadius;
+        uniform vec2 uDirection;
+
+        void main() {
+            //this will be our RGBA sum
+            vec4 sum = vec4(0.0);
+
+            //our original texcoord for this fragment
+            vec2 tc = vec2(gl_FragCoord.x / uResolutionX, gl_FragCoord.y / uResolutionY);
+
+            //the amount to blur, i.e. how far off center to sample from
+            //1.0 -> blur by one pixel
+            //2.0 -> blur by two pixels, etc.
+            float blurX = uRadius/uResolutionX;
+            float blurY = uRadius/uResolutionY;
+
+            //the uDirectionection of our blur
+            //(1.0, 0.0) -> x-axis blur
+            //(0.0, 1.0) -> y-axis blur
+            float hstep = uDirection.x;
+            float vstep = uDirection.y;
+
+            //apply blurring, using a 9-tap filter with predefined gaussian weights
+
+            sum += texture2D(uTexture, vec2(tc.x - 4.0*blurX*hstep, tc.y - 4.0*blurY*vstep)) * 0.0162162162;
+            sum += texture2D(uTexture, vec2(tc.x - 3.0*blurX*hstep, tc.y - 3.0*blurY*vstep)) * 0.0540540541;
+            sum += texture2D(uTexture, vec2(tc.x - 2.0*blurX*hstep, tc.y - 2.0*blurY*vstep)) * 0.1216216216;
+            sum += texture2D(uTexture, vec2(tc.x - 1.0*blurX*hstep, tc.y - 1.0*blurY*vstep)) * 0.1945945946;
+
+            sum += texture2D(uTexture, vec2(tc.x, tc.y)) * 0.2270270270;
+
+            sum += texture2D(uTexture, vec2(tc.x + 1.0*blurX*hstep, tc.y + 1.0*blurY*vstep)) * 0.1945945946;
+            sum += texture2D(uTexture, vec2(tc.x + 2.0*blurX*hstep, tc.y + 2.0*blurY*vstep)) * 0.1216216216;
+            sum += texture2D(uTexture, vec2(tc.x + 3.0*blurX*hstep, tc.y + 3.0*blurY*vstep)) * 0.0540540541;
+            sum += texture2D(uTexture, vec2(tc.x + 4.0*blurX*hstep, tc.y + 4.0*blurY*vstep)) * 0.0162162162;
+
+            //discard alpha for our simple demo, multiply by vertex color and return
+            gl_FragColor = vec4(sum.rgb, 1.0);
+        }
+    </script>
 </head>
 
 <body onload="start()">
     <canvas id="glcanvas">
         Your browser doesn't appear to support the HTML5 <code>&lt;canvas&gt;</code> element.
     </canvas>
-    <div class="config"><br>
-        <p>Постобработка</p>
 
-        <label>
-            <input type="radio" name="post-processing" value="NoProcessing" onchange="noProcessing()" checked>
-            Без постобработки
-        </label><br/>
+    <div id="info">
+        <a>Удерживайте ЛКМ для перемещения. Используйте колесо мыши для масштабирования.</a>
+        <br/>
+        <a>На сенсорном экране проведите по правой части экрана для масштабирования.</a>
+    </div>
 
-        <label>
-            <input type="radio" name="post-processing" value="GaussBlur" onchange="gaussBlur()">
-            Гауссово размытие
-        </label><br/>
-
+    <div id="config">
         <p>Источник освещения</p>
 
         <label>
@@ -44,25 +431,32 @@
             <input type="radio" name="light-source" value="Still" onchange="stopLightAnimation()" checked>
             Покоящийся
         </label><br/>
+
+
+        <p>Туман</p>
+
+        <label>
+            <input type="radio" name="fog" value="Enabled" onchange="enableFog()" checked>
+            Слоистый туман
+        </label><br/>
+
+        <label>
+            <input type="radio" name="fog" value="Disabled" onchange="disableFog()">
+            Без тумана
+        </label><br/>
+
+        <p>Погружение в туман</p>
+
+        <label>
+            <input type="radio" name="post-processing" value="GaussBlur" onchange="gaussBlur()" checked>
+            C размытием
+        </label><br/>
+
+        <label>
+            <input type="radio" name="post-processing" value="NoProcessing" onchange="noProcessing()">
+            Без постобработки
+        </label><br/>
     </div>
-    <!--div class="config"><br>
-        <p>Модель освещения</p>
-
-        <label>
-            <input type="radio" name="lighting" value="NoLighting" onchange="noLighting()">
-            Без освещения
-        </label><br/>
-
-        <label>
-            <input type="radio" name="lighting" value="Lambert" onchange="lambertLighting()" checked>
-            Ламберт
-        </label><br/>
-
-        <label>
-            <input type="radio" name="lighting" value="CookTorrance" onchange="cookTorrance()">
-            Кук-Торранс
-        </label><br/>
-    </div-->
 </body>
 
 </html>

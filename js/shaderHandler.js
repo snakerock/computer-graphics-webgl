@@ -26,10 +26,18 @@ shaderHandler.loadShader = function(file, type) {
 
     $.ajax({
         async: false,
-        url: "glsl/" + file,
+        url: "glssl/" + file + ".glsl",
         dataType: "text",
         success: function(result) {
-            shaderSource = {script: result, type: type};
+            shaderSource = { script: result, type: type, file: file };
+        },
+        error: function() {
+            var source = $('#' + file).html();
+            if (source !== undefined) {
+                shaderSource = { script: source, type: type, file: file };
+            } else {
+                alert("Shaders not found anywhere.");
+            }
         }
     });
 
@@ -38,23 +46,16 @@ shaderHandler.loadShader = function(file, type) {
 
 shaderHandler.getShader = function (gl, id) {
 
-    //get the shader object from our main.shaders repository
     var shaderSource = shaderHandler.allShaders[id];
-
-    //create the right shader
     var shader = gl.createShader(shaderSource.type);
-
-    //wire up the shader and compile
     gl.shaderSource(shader, shaderSource.script);
     gl.compileShader(shader);
 
-    //if things didn't go so well alert
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        alert(gl.getShaderInfoLog(shader));
+        alert("Error in " + shaderSource.file + ":\n" + gl.getShaderInfoLog(shader));
         return null;
     }
 
-    //return the shader reference
     return shader;
 
 };

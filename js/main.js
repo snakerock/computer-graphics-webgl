@@ -5,45 +5,35 @@ var isMouseDown = false;
 var mousePos = [0, 0];
 
 function start() {
-    canvas = $("#glcanvas")[0];
+
+    canvas = document.getElementById("glcanvas");
     gl = initWebGL(canvas);
 
     if (gl) {
-        gl.clearColor(0.5, 0.5, 0.5, 1.0);                      // Set clear color to black, fully opaque
-        gl.enable(gl.DEPTH_TEST);                               // Enable depth testing
-        gl.depthFunc(gl.LEQUAL);                                // Near things obscure far things
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);    // Clear the color as well as the depth buffer.
-        //depthTextureExt = gl.getExtension("WEBGL_depth_texture");
-        //console.log(depthTextureExt);
-        //gl.getExtension('OES_texture_float');
+        gl.clearColor(0.5, 0.5, 0.5, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     } else {
         alert("Could not initialize WebGL. Update your browser or check settings.");
         return;
     }
 
     scene = new Scene(canvas, gl);
-    /*for (var x = -400.0; x <= 401.0; x += 200.0) {
-     for (var z = -300.0; z >= -500.0; z -= 100.0) {
-     scene.objects.push (new Object3D(gl,
-     "ozzy-vn.json",
-     new CookTorranceShader(gl),
-     new DepthmapShader(gl),
-     [x, -200, z]));
-     }
-     }*/
     var noLightShader = new NoLightShader(gl);
     var lambertShader = new LambertShader(gl);
     var cookTorranceShader = new CookTorranceShader(gl);
     var depthMapshader = new DepthmapShader(gl);
-    scene.objects.push(new Object3D(gl, "terrain.json", lambertShader, depthMapshader, [0.0, -1, 0.0], 0.5));
-    scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, 0.0, 0.0], 0.01));
-    scene.objects.push(new Object3D(gl, "ozzy.json", cookTorranceShader, depthMapshader, [-300.0, 0.0, 0.0], 0.01));
-    scene.objects.push(new Object3D(gl, "ozzy.json", cookTorranceShader, depthMapshader, [-150.0, 0.0, 100.0], 0.02));
-    //scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, 0.0, 20.0], 0.01));
-    //scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [0.0, -200, 50.0]));
-    //scene.objects.push(new Object3D(gl, "ozzy-vn.json", new LambertShader(gl), [-200.0, -100, -300.0]));
+    scene.objects.push(new Object3D(gl, "terrain.json", lambertShader, depthMapshader, [2.7, -0.15, 0.0], 10, [0.4, 0.7, 0.4, 1.0]));
+    scene.objects.push(new Object3D(gl, "ozzy.json", lambertShader, depthMapshader, [-190.0, 13.0, 0.0], 0.01, [0.8, 0.8, 0.8, 1.0]));
+    scene.objects.push(new Object3D(gl, "chev.json", cookTorranceShader, depthMapshader, [0.0, 3.0, 0.0], 0.4, [0.8, 0.3, 0.3, 1.0]));
+    scene.objects.push(new Object3D(gl, "stone1.json", lambertShader, depthMapshader, [8.0, 0.0, -10.0], 0.5, [0.4, 0.35, 0.33, 1.0]));
+    scene.objects.push(new Object3D(gl, "stone3.json", lambertShader, depthMapshader, [1.0, 0.0, -11.0], 0.5, [0.4, 0.35, 0.33, 1.0]));
+    scene.objects.push(new Object3D(gl, "stone4.json", lambertShader, depthMapshader, [13.0, 0.0, -8.0], 0.4, [0.4, 0.35, 0.33, 1.0]));
+    scene.objects.push(new Object3D(gl, "stone2.json", lambertShader, depthMapshader, [8.0, 0.0, -5.0], 0.4, [0.4, 0.35, 0.33, 1.0]));
+    scene.objects.push(new Object3D(gl, "stone5.json", lambertShader, depthMapshader, [-5.0, 0.0, -4.0], 0.7, [0.4, 0.35, 0.33, 1.0]));
 
-    $(window).resize(resizeCanvas);
+    window.addEventListener("resize", resizeCanvas, false);
     resizeCanvas();
 
     var mousedown = function (event) {
@@ -53,6 +43,7 @@ function start() {
         }
         mousePos = [event.pageX, event.pageY];
     };
+
     var mousemove = function (event) {
         if (isMouseDown) {
             var zooming = false;
@@ -66,10 +57,10 @@ function start() {
             }
 
             if (zooming) {
-                scene.vTranslate(event.pageY - mousePos[1]);
+                scene.zoomScene(event.pageY - mousePos[1]);
                 drawScene();
             } else {
-                scene.vRotateXY((event.pageX - mousePos[0]) / 100, (event.pageY - mousePos[1]) / 100);
+                scene.rotateXY((event.pageX - mousePos[0]) / 100, (event.pageY - mousePos[1]) / 100);
                 drawScene();
             }
             mousePos = [event.pageX, event.pageY];
@@ -86,11 +77,15 @@ function start() {
     canvas.addEventListener("touchmove", mousemove, false);
     canvas.addEventListener("mousemove", mousemove, false);
 
-    $("#glcanvas").bind('mousewheel', function(event) {
-        var z = event.originalEvent.wheelDelta > 0 ? 10 : -10;
-        scene.vTranslate(z);
+    canvas.addEventListener("mousewheel", function(event) {
+        var z = event.wheelDelta > 0 ? 10 : -10;
+        scene.zoomScene(z);
         drawScene();
-    });
+    }, false);
+
+    setTimeout(function() {
+        document.getElementById("info").style.display = "none";
+    }, 8000);
 }
 
 function initWebGL(canvas) {
@@ -116,17 +111,9 @@ function drawScene() {
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    scene.setupScreen();
     scene.createRenderPPTextures(gl);
     drawScene();
-}
-
-function noLighting() {
-}
-
-function lambertLighting() {
-}
-
-function cookTorrance() {
 }
 
 function noProcessing() {
@@ -145,24 +132,29 @@ function startLightAnimation() {
     scene.startLightAnimation(canvas, gl);
 }
 
+function enableFog() {
+    scene.enableFog();
+    drawScene();
+}
+
+function disableFog() {
+    scene.disableFog();
+    drawScene();
+}
+
 Array.prototype.equals = function (array) {
-    // if the other array is a falsy value, return
     if (!array)
         return false;
 
-    // compare lengths - can save a lot of time
     if (this.length != array.length)
         return false;
 
     for (var i = 0, l=this.length; i < l; i++) {
-        // Check if we have nested arrays
         if (this[i] instanceof Array && array[i] instanceof Array) {
-            // recurse into the nested arrays
             if (!this[i].equals(array[i]))
                 return false;
         }
         else if (this[i] != array[i]) {
-            // Warning - two different object instances will never be equal: {x:20} != {x:20}
             return false;
         }
     }

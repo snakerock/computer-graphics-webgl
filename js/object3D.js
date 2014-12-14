@@ -1,4 +1,4 @@
-function Object3D(gl, model, shader, depthmapShader, position, zoom) {
+function Object3D(gl, model, shader, depthmapShader, position, zoom, color) {
     if (typeof(model) == 'string') {
         this.model = Loader.load(gl, model);
     } else {
@@ -9,7 +9,12 @@ function Object3D(gl, model, shader, depthmapShader, position, zoom) {
     this.shader = shader;
     this.depthmapShader = depthmapShader;
     this.position = position || [0.0, 0.0, 0.0];
-    this.randColors = false;
+    this.randColors = color === "rand";
+    if (color !== undefined && color instanceof Array) {
+        this.color = color;
+    } else {
+        this.color = [1.0, 1.0, 1.0, 1.0];
+    }
 
     this.setColor = function(color) {
         this.model.colors = [];
@@ -30,7 +35,7 @@ function Object3D(gl, model, shader, depthmapShader, position, zoom) {
 
         this.model.metadata.colors = this.model.metadata.vertices;
     };
-    this.setColor([1.0, 1.0, 1.0, 1.0]);
+    this.setColor(this.color);
 
     this.verticesBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this.verticesBuffer);

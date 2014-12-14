@@ -12,9 +12,17 @@ canvas {
     display: block;
 }
 
-.config {
+#config {
     position: absolute;
     bottom: 0;
+    left: 0;
+    background-color: whitesmoke;
+    padding: 5px 10px 5px 10px;
+}
+
+#info {
+    position: absolute;
+    top: 0;
     left: 0;
     background-color: whitesmoke;
     padding: 5px 10px 5px 10px;
